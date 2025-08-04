@@ -19,13 +19,14 @@ public class Main {
 
                   Socket client = serverSocket.accept();
                   Thread thread = new Thread(new HandleClients(client));
+                  System.out.println(thread.getName());
                   thread.start();
 
               }
             }catch (IOException e) {
                 System.out.println("IOException: " + e.getMessage());
           }
-
+        //last chapter of the first part remained
 
   }
 }

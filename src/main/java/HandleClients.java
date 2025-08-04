@@ -13,15 +13,18 @@ public class HandleClients implements Runnable{
 
     @Override
     public void run(){
-        //move the logic to handle clients to here copy-paste
+
         try{
             OutputStream out = client.getOutputStream();
             BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(client.getInputStream()));
-            String Requestline = bufferedReader.readLine();
-            //System.out.println(Requestline);
+            String requestLine = bufferedReader.readLine();
+            InputStream in = client.getInputStream();
 
-            if(!Requestline.isEmpty()){
-                String[] parts = Requestline.split(" ");
+            System.out.println(requestLine);
+
+            if(requestLine != null && !requestLine.isEmpty()){
+                String[] parts = requestLine.split(" ");
+                String operation = parts[0];
                 String path = parts[1];
                 Map<String, String> map = new HashMap<>();
                 String i;
@@ -35,6 +38,12 @@ public class HandleClients implements Runnable{
                         }
                         if(i.startsWith("Accept:")){
                             map.put("Accept", i.substring("Accept:".length()).trim());
+                        }
+                        if(i.startsWith("Content-Type:")){
+                            map.put("Content-Type", i.substring("Content-Type:".length()).trim());
+                        }
+                        if(i.startsWith("Content-Length:")){
+                            map.put("Content-Length", i.substring("Content-Length:".length()).trim());
                         }
                     }
                 }catch(IOException e){
@@ -63,30 +72,46 @@ public class HandleClients implements Runnable{
                     out.flush();
                     System.out.println(value + " sent");
                 } else if (path.startsWith("/files/")) {
-                    String fileName = path.substring("/files/".length()).trim();
-                    String pathToFile = ".\\"+fileName;
-                    File file = new File(pathToFile);
-                    if(file.exists() && file.isFile()){
-                        byte[] body = Files.readAllBytes(file.toPath());
-                        String response = "HTTP/1.1 200 OK\r\n"+
-                                            "Content-Type: application/octet-stream\r\n"+
-                                            "Content-Length: " + body.length + "\r\n"+
-                                            "\r\n";
+                    if(operation.equals("GET")){
+                        String fileName = path.substring("/files/".length()).trim();
+                        String pathToFile = ".\\"+fileName;
+                        File file = new File(pathToFile);
+                        if(file.exists() && file.isFile()){
+                            byte[] body = Files.readAllBytes(file.toPath());
+                            String response = "HTTP/1.1 200 OK\r\n"+
+                                    "Content-Type: application/octet-stream\r\n"+
+                                    "Content-Length: " + body.length + "\r\n"+
+                                    "\r\n";
 
-                        out.write(response.getBytes());
-                        out.write(body);
-                        out.flush();
-                        System.out.println("Accepted");
-                    }else{
-                        String body = "404 Not Found";
-                        String response = "HTTP/1.1 404 Not Found\r\n" +
-                                "Content-Type: text/plain\r\n" +
-                                "Content-Length: " + body.length() + "\r\n" +
-                                "\r\n" +
-                                body;
-                        out.write(response.getBytes());
-                        out.flush();
-                        System.out.println("not accepted");
+                            out.write(response.getBytes());
+                            out.write(body);
+                            out.flush();
+                            System.out.println("Accepted");
+                        }else{
+                            String body = "404 Not Found";
+                            String response = "HTTP/1.1 404 Not Found\r\n" +
+                                    "Content-Type: text/plain\r\n" +
+                                    "Content-Length: " + body.length() + "\r\n" +
+                                    "\r\n" +
+                                    body;
+                            out.write(response.getBytes());
+                            out.flush();
+                            System.out.println("not accepted");
+                        }
+                    }
+                    else if(operation.equals("POST")){
+                        System.out.println("here");
+                        String fileName = path.substring("/files/".length()).trim();
+                        int nrBytes = Integer.parseInt(map.get("Content-Length"));
+                        char[] rawData = new char[nrBytes];
+                        int bytesRead = 0;
+                        System.out.println("rigth before");
+                        bufferedReader.read(rawData, bytesRead, nrBytes);
+                        System.out.println("right after");
+                        //System.out.println(value);
+                        System.out.println(rawData.length);
+                        //continue here
+
                     }
                     
                 } else{
@@ -99,7 +124,7 @@ public class HandleClients implements Runnable{
                 String response = "HTTP/1.1 404 Not Found\r\n\r\n";
                 out.write(response.getBytes());
                 out.flush();
-                System.out.println("No request line");
+                //System.out.println("No request line");
             }
         }
         catch (IOException e){
