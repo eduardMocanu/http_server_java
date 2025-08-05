@@ -18,7 +18,7 @@ public class HandleClients implements Runnable{
             OutputStream out = client.getOutputStream();
             BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(client.getInputStream()));
             String requestLine = bufferedReader.readLine();
-            InputStream in = client.getInputStream();
+
 
             System.out.println(requestLine);
 
@@ -45,6 +45,9 @@ public class HandleClients implements Runnable{
                         if(i.startsWith("Content-Length:")){
                             map.put("Content-Length", i.substring("Content-Length:".length()).trim());
                         }
+                        if(i.startsWith("Accept-Encoding:")){
+                            map.put("Accept-Encoding", i.substring("Accept-Encoding:".length()).trim());
+                        }
                     }
                 }catch(IOException e){
                     System.out.println(e.getMessage());
@@ -52,11 +55,20 @@ public class HandleClients implements Runnable{
 
                 if (path.startsWith("/echo/")){
                     String body = path.substring(6);
-                    String response = "HTTP/1.1 200 OK\r\n" +
-                            "Content-Type: text/plain\r\n" +
-                            "Content-Length: " + body.length() + "\r\n" +
-                            "\r\n"+
-                            body;
+                    String response;
+                    if(map.containsKey("Accept-Encoding") && map.get("Accept-Encoding").contains("gzip")){
+                        response = "HTTP/1.1 200 OK\r\n"+
+                                "Content-Type: text/plain\r\n"+
+                                "Content-Encoding: gzip\r\n"+
+                                "\r\n";
+                    }else{
+                        response = "HTTP/1.1 200 OK\r\n" +
+                                "Content-Type: text/plain\r\n" +
+                                "Content-Length: " + body.length() + "\r\n" +
+                                "\r\n"+
+                                body;
+                    }
+
                     System.out.println(body);
                     out.write(response.getBytes());
                     out.flush();
@@ -100,18 +112,43 @@ public class HandleClients implements Runnable{
                         }
                     }
                     else if(operation.equals("POST")){
-                        System.out.println("here");
-                        String fileName = path.substring("/files/".length()).trim();
-                        int nrBytes = Integer.parseInt(map.get("Content-Length"));
-                        char[] rawData = new char[nrBytes];
-                        int bytesRead = 0;
-                        System.out.println("rigth before");
-                        bufferedReader.read(rawData, bytesRead, nrBytes);
-                        System.out.println("right after");
-                        //System.out.println(value);
-                        System.out.println(rawData.length);
-                        //continue here
+                        String fileName = path.substring("/files/".length()).trim() + ".txt";
+                        try{
+                            if(fileName.contains("..")||fileName.contains("\\") || fileName.contains("/")){
+                                throw new IllegalArgumentException("Invalid file name: directory traversal attempted");
+                            }
+                            int nrBytes = Integer.parseInt(map.get("Content-Length"));
+                            char[] rawData = new char[nrBytes];
+                            bufferedReader.read(rawData, 0, nrBytes);
+                            System.out.println(rawData.length);
+                            String fileData = new String(rawData);
+                            System.out.println(fileData);
+                            File createdFile = new File(fileName);
 
+                            String response;
+                            if(createdFile.createNewFile()){
+                                System.out.println("File created " + createdFile.getName());
+                                response = "HTTP/1.1 201 Created\r\n\r\n";
+                            }else{
+                                System.out.println("file already exists");
+                                response = "HTTP/1.1 200 OK\r\n\r\n";
+                            }
+                            FileWriter fileWriter = new FileWriter(fileName);
+                            fileWriter.write(fileData);
+                            fileWriter.close();
+                            out.write(response.getBytes());
+                            out.flush();
+
+                        }catch(Exception e){
+                            System.out.println(e.getMessage());
+                            String bodyMessage = "Request had a problem: " + e.getMessage();
+                            String response = "HTTP/1.1 400 Bad Request\r\n"+
+                                    "Content-Type: text/plain\r\n"+
+                                    "Content-Length: " + bodyMessage.length() +"\r\n"+
+                                    "\r\n"+bodyMessage;
+                            out.write(response.getBytes());
+                            out.flush();
+                        }
                     }
                     
                 } else{
@@ -124,7 +161,6 @@ public class HandleClients implements Runnable{
                 String response = "HTTP/1.1 404 Not Found\r\n\r\n";
                 out.write(response.getBytes());
                 out.flush();
-                //System.out.println("No request line");
             }
         }
         catch (IOException e){

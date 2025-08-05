@@ -26,7 +26,7 @@ public class Main {
             }catch (IOException e) {
                 System.out.println("IOException: " + e.getMessage());
           }
-        //last chapter of the first part remained
+        //multiple compression schemas - at least gzip
 
   }
 }
