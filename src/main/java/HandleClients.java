@@ -3,6 +3,7 @@ import java.net.Socket;
 import java.nio.file.Files;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.zip.*;
 
 public class HandleClients implements Runnable{
     private Socket client;
@@ -57,32 +58,49 @@ public class HandleClients implements Runnable{
                     String body = path.substring(6);
                     String response;
                     if(map.containsKey("Accept-Encoding") && map.get("Accept-Encoding").contains("gzip")){
+                        byte[] compressedBytes = gzipCompress(body.getBytes());
                         response = "HTTP/1.1 200 OK\r\n"+
                                 "Content-Type: text/plain\r\n"+
                                 "Content-Encoding: gzip\r\n"+
+                                "Content-Length: " + compressedBytes.length+"\r\n"+
                                 "\r\n";
+                        System.out.println(body);
+                        out.write(response.getBytes());
+                        out.write(compressedBytes);
+                        out.flush();
+                        System.out.println("Accepted");
                     }else{
                         response = "HTTP/1.1 200 OK\r\n" +
                                 "Content-Type: text/plain\r\n" +
                                 "Content-Length: " + body.length() + "\r\n" +
                                 "\r\n"+
                                 body;
+                        System.out.println(body);
+                        out.write(response.getBytes());
+                        out.flush();
+                        System.out.println("Accepted");
                     }
-
-                    System.out.println(body);
-                    out.write(response.getBytes());
-                    out.flush();
-                    System.out.println("Accepted");
                 } else if (path.equals("/user-agent")) {
                     String value = map.get("User-Agent");
-                    String response = "HTTP/1.1 200 OK\r\n" +
-                            "Content-Type: text/plain\r\n"+
-                            "Content-Length: " + value.length() + "\r\n"+
-                            "\r\n"
-                            + value;
-                    out.write(response.getBytes());
+                    String response;
+                    if(map.containsKey("Accept-Encoding") && map.get("Accept-Encoding").contains("gzip")){
+                        byte[] body = gzipCompress(value.getBytes());
+                        response = "HTTP/1.1 200 OK\r\n"+
+                                "Content-Type: text/plain\r\n"+
+                                "Content-Length: " + body.length + "\r\n"+
+                                "Content-Encoding: gzip\r\n"+
+                                "\r\n";
+                        out.write(response.getBytes());
+                        out.write(body);
+                    }else{
+                        response = "HTTP/1.1 200 OK\r\n" +
+                                "Content-Type: text/plain\r\n"+
+                                "Content-Length: " + value.length() + "\r\n"+
+                                "\r\n"
+                                + value;
+                        out.write(response.getBytes());
+                    }
                     out.flush();
-                    System.out.println(value + " sent");
                 } else if (path.startsWith("/files/")) {
                     if(operation.equals("GET")){
                         String fileName = path.substring("/files/".length()).trim();
@@ -90,22 +108,36 @@ public class HandleClients implements Runnable{
                         File file = new File(pathToFile);
                         if(file.exists() && file.isFile()){
                             byte[] body = Files.readAllBytes(file.toPath());
-                            String response = "HTTP/1.1 200 OK\r\n"+
-                                    "Content-Type: application/octet-stream\r\n"+
-                                    "Content-Length: " + body.length + "\r\n"+
-                                    "\r\n";
-
-                            out.write(response.getBytes());
-                            out.write(body);
+                            String response;
+                            if(map.containsKey("Accept-Encoding") && map.get("Accept-Encoding").contains("gzip")){
+                                byte[] bodyGzipCompressed = gzipCompress(body);
+                                response = "HTTP/1.1 200 OK\r\n"+
+                                        "Content-Type: application/octet-stream\r\n"+
+                                        "Content-Length: " + bodyGzipCompressed.length + "\r\n"+
+                                        "Content-Encoding: gzip\r\n"+
+                                        "\r\n";
+                                out.write(response.getBytes());
+                                out.write(bodyGzipCompressed);
+                            }
+                            else{
+                                response = "HTTP/1.1 200 OK\r\n"+
+                                        "Content-Type: application/octet-stream\r\n"+
+                                        "Content-Length: " + body.length + "\r\n"+
+                                        "\r\n";
+                                out.write(response.getBytes());
+                                out.write(body);
+                            }
                             out.flush();
                             System.out.println("Accepted");
                         }else{
-                            String body = "404 Not Found";
-                            String response = "HTTP/1.1 404 Not Found\r\n" +
-                                    "Content-Type: text/plain\r\n" +
-                                    "Content-Length: " + body.length() + "\r\n" +
-                                    "\r\n" +
-                                    body;
+                            String response;
+                            String body;
+                            body = "404 Not Found";
+                            response = "HTTP/1.1 404 Not Found\r\n" +
+                                        "Content-Type: text/plain\r\n" +
+                                        "Content-Length: " + body.length() + "\r\n" +
+                                        "\r\n" +
+                                        body;
                             out.write(response.getBytes());
                             out.flush();
                             System.out.println("not accepted");
@@ -167,5 +199,20 @@ public class HandleClients implements Runnable{
             System.out.println(e.getMessage());
         }
     }
-
+    private byte[] gzipCompress(byte[] initialBytedData){
+        try{
+            ByteArrayOutputStream os = new ByteArrayOutputStream();
+            GZIPOutputStream gzip = new GZIPOutputStream(os);
+            gzip.write(initialBytedData);
+            gzip.close();
+            return os.toByteArray();
+        }
+        catch(Exception e){
+            System.out.println(e.getMessage());
+            byte[] error = new byte[0];
+            return error;
+        }
+    }
 }
+//TO DO - write a sendResponse method that is modular enough to serve for all endpoints
+//only remained the persistent connections
