@@ -59,7 +59,7 @@ This project is open source and available under the MIT License.
 
 ✍️ Author
 
-Edy Mocanu
+Eduard Mocanu
 
 GitHub: [my github](https://github.com/MocEddy)
 
