@@ -61,142 +61,75 @@ public class HandleClients implements Runnable {
                     } catch (IOException e) {
                         System.out.println(e.getMessage());
                     }
-
+                    String contentTypeText = "text/plain";
+                    String contentEncoding = (map.containsKey("Accept-Encoding") && map.get("Accept-Encoding").contains("gzip")) ? "gzip" : "";
+                    String connection = (map.containsKey("Connection") && map.get("Connection").contains("close")) ? "close" : "";
                     if (path.startsWith("/echo/")) {
                         String body = path.substring(6);
-                        String response;
-                        if (map.containsKey("Accept-Encoding") && map.get("Accept-Encoding").contains("gzip")) {
-                            byte[] compressedBytes = gzipCompress(body.getBytes());
-                            response = "HTTP/1.1 200 OK\r\n" +
-                                    "Content-Type: text/plain\r\n" +
-                                    "Content-Encoding: gzip\r\n" +
-                                    "Content-Length: " + compressedBytes.length + "\r\n" +
-                                    "\r\n";
-                            System.out.println(body);
-                            out.write(response.getBytes());
-                            out.write(compressedBytes);
-                        } else {
-                            response = "HTTP/1.1 200 OK\r\n" +
-                                    "Content-Type: text/plain\r\n" +
-                                    "Content-Length: " + body.length() + "\r\n" +
-                                    "\r\n" +
-                                    body;
-                            System.out.println(body);
-                            out.write(response.getBytes());
-                        }
-                        out.flush();
+                        sendResponse(out, "200", "OK", contentTypeText, "", connection, body.getBytes());
                         System.out.println("Accepted");
+
                     } else if (path.equals("/user-agent")) {
                         String value = map.get("User-Agent");
-                        String response;
-                        if (map.containsKey("Accept-Encoding") && map.get("Accept-Encoding").contains("gzip")) {
-                            byte[] body = gzipCompress(value.getBytes());
-                            response = "HTTP/1.1 200 OK\r\n" +
-                                    "Content-Type: text/plain\r\n" +
-                                    "Content-Length: " + body.length + "\r\n" +
-                                    "Content-Encoding: gzip\r\n" +
-                                    "\r\n";
-                            out.write(response.getBytes());
-                            out.write(body);
-                        } else {
-                            response = "HTTP/1.1 200 OK\r\n" +
-                                    "Content-Type: text/plain\r\n" +
-                                    "Content-Length: " + value.length() + "\r\n" +
-                                    "\r\n"
-                                    + value;
-                            out.write(response.getBytes());
-                        }
-                        out.flush();
+                        sendResponse(out, "200", "OK", contentTypeText, "", connection, value.getBytes());
+
                     } else if (path.startsWith("/files/")) {
+
                         if (operation.equals("GET")) {
                             String fileName = path.substring("/files/".length()).trim();
                             String pathToFile = ".\\" + fileName;
                             File file = new File(pathToFile);
-                            if (file.exists() && file.isFile()) {
-                                byte[] body = Files.readAllBytes(file.toPath());
-                                String response;
-                                if (map.containsKey("Accept-Encoding") && map.get("Accept-Encoding").contains("gzip")) {
-                                    byte[] bodyGzipCompressed = gzipCompress(body);
-                                    response = "HTTP/1.1 200 OK\r\n" +
-                                            "Content-Type: application/octet-stream\r\n" +
-                                            "Content-Length: " + bodyGzipCompressed.length + "\r\n" +
-                                            "Content-Encoding: gzip\r\n" +
-                                            "\r\n";
-                                    out.write(response.getBytes());
-                                    out.write(bodyGzipCompressed);
+                            if (fileName.contains("..") || fileName.contains("\\") || fileName.contains("/")) {
+                                sendResponse(out, "400", "Bad Request", contentTypeText, "", connection, "folder traversal attempted".getBytes());
+                            }else{
+                                if (file.exists() && file.isFile()) {
+                                    byte[] body = Files.readAllBytes(file.toPath());
+                                    sendResponse(out, "200", "OK", "application/octet-stream", contentEncoding, connection, gzipCompress(body));
                                 } else {
-                                    response = "HTTP/1.1 200 OK\r\n" +
-                                            "Content-Type: application/octet-stream\r\n" +
-                                            "Content-Length: " + body.length + "\r\n" +
-                                            "\r\n";
-                                    out.write(response.getBytes());
-                                    out.write(body);
+                                    sendResponse(out, "404", "Not Found", contentTypeText, "", connection, "Not found".getBytes());
                                 }
-                                out.flush();
-                                System.out.println("Accepted");
-                            } else {
-                                String response;
-                                String body;
-                                body = "404 Not Found";
-                                response = "HTTP/1.1 404 Not Found\r\n" +
-                                        "Content-Type: text/plain\r\n" +
-                                        "Content-Length: " + body.length() + "\r\n" +
-                                        "\r\n" +
-                                        body;
-                                out.write(response.getBytes());
-                                out.flush();
-                                System.out.println("not accepted");
                             }
+
                         } else if (operation.equals("POST")) {
                             String fileName = path.substring("/files/".length()).trim() + ".txt";
                             try {
                                 if (fileName.contains("..") || fileName.contains("\\") || fileName.contains("/")) {
-                                    throw new IllegalArgumentException("Invalid file name: directory traversal attempted");
+                                    sendResponse(out, "400", "Bad Request", contentTypeText, "", connection, "folder traversal attempted".getBytes());
                                 }
-                                int nrBytes = Integer.parseInt(map.get("Content-Length"));
-                                char[] rawData = new char[nrBytes];
-                                bufferedReader.read(rawData, 0, nrBytes);
-                                System.out.println(rawData.length);
-                                String fileData = new String(rawData);
-                                System.out.println(fileData);
-                                File createdFile = new File(fileName);
+                                else{
+                                    int nrBytes = Integer.parseInt(map.get("Content-Length"));
+                                    char[] rawData = new char[nrBytes];
+                                    bufferedReader.read(rawData, 0, nrBytes);
+                                    System.out.println(rawData.length);
+                                    String fileData = new String(rawData);
+                                    System.out.println(fileData);
+                                    File createdFile = new File(fileName);
 
-                                String response;
-                                if (createdFile.createNewFile()) {
-                                    System.out.println("File created " + createdFile.getName());
-                                    response = "HTTP/1.1 201 Created\r\n\r\n";
-                                } else {
-                                    System.out.println("file already exists");
-                                    response = "HTTP/1.1 200 OK\r\n\r\n";
+                                    FileWriter fileWriter = new FileWriter(fileName);
+                                    fileWriter.write(fileData);
+                                    fileWriter.close();
+
+                                    if (createdFile.createNewFile()) {
+                                        sendResponse(out, "201", "Created", contentTypeText, "", connection, "created".getBytes());
+                                    } else {
+                                        sendResponse(out, "200", "OK", contentTypeText, "", connection, "file already exists".getBytes());
+                                    }
                                 }
-                                FileWriter fileWriter = new FileWriter(fileName);
-                                fileWriter.write(fileData);
-                                fileWriter.close();
-                                out.write(response.getBytes());
-                                out.flush();
+
 
                             } catch (Exception e) {
                                 System.out.println(e.getMessage());
-                                String bodyMessage = "Request had a problem: " + e.getMessage();
-                                String response = "HTTP/1.1 400 Bad Request\r\n" +
-                                        "Content-Type: text/plain\r\n" +
-                                        "Content-Length: " + bodyMessage.length() + "\r\n" +
-                                        "\r\n" + bodyMessage;
-                                out.write(response.getBytes());
-                                out.flush();
+                                sendResponse(out, "400", "Bad Request", contentTypeText, "", connection, ("Request had a problem " + e.getMessage()).getBytes());
                             }
                         }
 
                     } else {
-                        String response = "HTTP/1.1 404 Not Found\r\n\r\n";
-                        out.write(response.getBytes());
-                        out.flush();
+                        sendResponse(out, "404", "Not found", contentTypeText, "", connection, "Bad endpoint".getBytes());
                         System.out.println("Not accepted");
                     }
                 } else {
-                    String response = "HTTP/1.1 404 Not Found\r\n\r\n";
-                    out.write(response.getBytes());
-                    out.flush();
+                    sendResponse(out, "404", "Not found", "text/plain", "", "close", "No request line received".getBytes());
+                    System.out.println("Not accepted");
                 }
             }
         } catch (IOException e) {
@@ -216,5 +149,28 @@ public class HandleClients implements Runnable {
             return new byte[0];
         }
     }
+
+    private void sendResponse(OutputStream out, String code, String message, String contentType, String contentEncoding, String connection, byte[] body){
+        String response = "HTTP/1.1 " + code + " " + message + "\r\n"+
+                "Content-Type: " + contentType + "\r\n"+
+                "Content-Length: " + body.length + "\r\n";
+        if(!contentEncoding.isEmpty()){
+            response += "Content-Encoding: " + contentEncoding + "\r\n";
+        }
+        if(!connection.isEmpty()){
+            response += "Connection: " + connection + "\r\n";
+        }
+        response += "\r\n";
+        try{
+            out.write(response.getBytes());
+            out.write(body);
+            out.flush();
+        }
+        catch(IOException e){
+            System.out.println(e.getMessage());
+        }
+
+    }
+
 }
 //TO DO - write a sendResponse method that is modular enough to serve for all endpoints
