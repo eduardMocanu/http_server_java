@@ -61,6 +61,6 @@ This project is open source and available under the MIT License.
 
 Edy Mocanu
 
-GitHub: [](https://github.com/MocEddy)
+GitHub: [my github](https://github.com/MocEddy)
 
-LinkedIn: [](https://www.linkedin.com/in/eduard-mocanu-031803219/)
+LinkedIn: [my linkedin](https://www.linkedin.com/in/eduard-mocanu-031803219/)
