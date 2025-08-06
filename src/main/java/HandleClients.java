@@ -97,22 +97,26 @@ public class HandleClients implements Runnable {
                                     sendResponse(out, "400", "Bad Request", contentTypeText, "", connection, "folder traversal attempted".getBytes());
                                 }
                                 else{
-                                    int nrBytes = Integer.parseInt(map.get("Content-Length"));
-                                    char[] rawData = new char[nrBytes];
-                                    bufferedReader.read(rawData, 0, nrBytes);
-                                    System.out.println(rawData.length);
-                                    String fileData = new String(rawData);
-                                    System.out.println(fileData);
-                                    File createdFile = new File(fileName);
+                                    if(!map.containsKey("Content-Length")){
+                                        sendResponse(out, "411", "Length Required", contentTypeText, "", connection, "Content-Length missing".getBytes());
+                                    }else{
+                                        int nrBytes = Integer.parseInt(map.get("Content-Length"));
+                                        char[] rawData = new char[nrBytes];
+                                        bufferedReader.read(rawData, 0, nrBytes);
+                                        System.out.println(rawData.length);
+                                        String fileData = new String(rawData);
+                                        System.out.println(fileData);
+                                        File createdFile = new File(fileName);
 
-                                    FileWriter fileWriter = new FileWriter(fileName);
-                                    fileWriter.write(fileData);
-                                    fileWriter.close();
+                                        if (createdFile.createNewFile()) {
+                                            sendResponse(out, "201", "Created", contentTypeText, "", connection, "created".getBytes());
+                                        } else {
+                                            sendResponse(out, "200", "OK", contentTypeText, "", connection, "file already exists".getBytes());
+                                        }
 
-                                    if (createdFile.createNewFile()) {
-                                        sendResponse(out, "201", "Created", contentTypeText, "", connection, "created".getBytes());
-                                    } else {
-                                        sendResponse(out, "200", "OK", contentTypeText, "", connection, "file already exists".getBytes());
+                                        FileWriter fileWriter = new FileWriter(fileName);
+                                        fileWriter.write(fileData);
+                                        fileWriter.close();
                                     }
                                 }
 
@@ -124,7 +128,7 @@ public class HandleClients implements Runnable {
                         }
 
                     } else {
-                        sendResponse(out, "404", "Not found", contentTypeText, "", connection, "Bad endpoint".getBytes());
+                        sendResponse(out, "405", "Method Not Allowed", contentTypeText, "", connection, "Bad endpoint".getBytes());
                         System.out.println("Not accepted");
                     }
                 } else {
@@ -173,4 +177,3 @@ public class HandleClients implements Runnable {
     }
 
 }
-//TO DO - write a sendResponse method that is modular enough to serve for all endpoints
