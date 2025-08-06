@@ -23,7 +23,9 @@ This is a multithreaded HTTP/1.1 server built entirely from scratch in Java usin
 ## 📂 Project Structure
 
 src/main/java/Main.java -> starts the server
+
 src/main/java/HandleClients.java -> handles each client in a thread
+
 test.txt -> test file to retrieve
 
 ## ⚙️ How It Works
