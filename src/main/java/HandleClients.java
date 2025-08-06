@@ -76,7 +76,7 @@ public class HandleClients implements Runnable {
                     } else if (path.startsWith("/files/")) {
 
                         if (operation.equals("GET")) {
-                            String fileName = path.substring("/files/".length()).trim();
+                            String fileName = path.substring("/files/".length()).trim() + ".txt";
                             String pathToFile = ".\\" + fileName;
                             File file = new File(pathToFile);
                             if (fileName.contains("..") || fileName.contains("\\") || fileName.contains("/")) {
