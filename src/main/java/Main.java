@@ -15,9 +15,8 @@ public class Main {
           try(ServerSocket serverSocket = new ServerSocket(4221)) {
               serverSocket.setReuseAddress(true);
               while(true){
-
-
                   Socket client = serverSocket.accept();
+                  client.setSoTimeout(10000);
                   Thread thread = new Thread(new HandleClients(client));
                   System.out.println(thread.getName());
                   thread.start();
