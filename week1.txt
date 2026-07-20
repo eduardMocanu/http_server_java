@@ -1,0 +1,52 @@
+Week 1 Plan - HTTP Server Refactor
+==================================
+Goal: shake off Java rust, get JUnit working, make the first small extraction
+testable. No architecture redesign yet.
+
+Session 1 - Get reacquainted
+  - Read Main.java and HandleClients.java slowly.
+  - Run the server, hit it with curl for each route:
+      /echo/{text}
+      /user-agent
+      /files/{name}  (GET and POST)
+  - Add JUnit 5 to pom.xml.
+  - Get a trivial "hello world" test running in the IDE to confirm setup.
+
+Session 2 - Set up JUnit properly
+  - Confirm `mvn test` works from the command line too, not just the IDE.
+  - Write one throwaway test (assertEquals(2, 1+1)) to shake out tooling
+    issues before real code is on the line.
+
+Session 3-4 - First extraction: request parsing
+  - Pull the request-line + header-parsing loop out of HandleClients.java
+    (currently lines ~25-63) into a standalone class, e.g.
+    HttpRequest.parse(BufferedReader reader), returning a small immutable
+    object (method, path, headers map).
+  - No sockets in this class - take a BufferedReader/Reader so tests can
+    feed it a StringReader instead of a real connection.
+  - This is the key Clean Code move: separate I/O plumbing from parsing
+    logic.
+
+Session 5 - Test the parser
+  - JUnit tests:
+      - GET request with headers
+      - request with Connection: close
+      - missing headers
+      - malformed request line
+  - Aim for full coverage of the parser without ever opening a socket.
+
+Session 6 - Wire it back in
+  - Replace the inline parsing in HandleClients with a call to the new
+    parser class.
+  - Confirm curl still works end to end (manual regression check).
+
+Session 7 - Reflect and plan week 2
+  - Note what felt rusty/awkward.
+  - List Clean Code smells noticed in the rest of HandleClients (routing
+    logic, sendResponse, file handling).
+  - These become week 2's extraction targets.
+
+End of week 1 outcome:
+  - JUnit working (IDE + command line).
+  - One real extracted and tested class (request parser).
+  - Concrete list of what to tackle next.

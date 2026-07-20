@@ -6,7 +6,7 @@ import java.util.Map;
 import java.util.zip.*;
 
 public class HandleClients implements Runnable {
-    private Socket client;
+    private final Socket client;
 
     HandleClients(Socket client) {
         this.client = client;
