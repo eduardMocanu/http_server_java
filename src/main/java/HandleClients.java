@@ -24,43 +24,10 @@ public class HandleClients implements Runnable {
             while (!client.isClosed() && ok) {
                 requestLine = bufferedReader.readLine();
                 System.out.println(requestLine);
-
-                if (requestLine != null && ! requestLine.isEmpty()) {
-                    String[] parts = requestLine.split(" ");
-                    String operation = parts[0];
-                    String path = parts[1];
-                    Map<String, String> map = new HashMap<>();
-                    String i;
-                    try {
-                        while (((i = bufferedReader.readLine()) != null) && ! i.isEmpty()) {
-                            if (i.startsWith("User-Agent:")) {
-                                map.put("User-Agent", i.substring("User-Agent:".length()).trim());
-                            }
-                            if (i.startsWith("Host:")) {
-                                map.put("Host", i.substring("Host:".length()).trim());
-                            }
-                            if (i.startsWith("Accept:")) {
-                                map.put("Accept", i.substring("Accept:".length()).trim());
-                            }
-                            if (i.startsWith("Content-Type:")) {
-                                map.put("Content-Type", i.substring("Content-Type:".length()).trim());
-                            }
-                            if (i.startsWith("Content-Length:")) {
-                                map.put("Content-Length", i.substring("Content-Length:".length()).trim());
-                            }
-                            if (i.startsWith("Accept-Encoding:")) {
-                                map.put("Accept-Encoding", i.substring("Accept-Encoding:".length()).trim());
-                            }
-                            if (i.startsWith("Connection:")) {
-                                map.put("Connection", i.substring("Connection:".length()).trim());
-                                if (map.get("Connection").equals("close")) {
-                                    ok = false;
-                                }
-                            }
-                        }
-                    } catch (IOException e) {
-                        System.out.println(e.getMessage());
-                    }
+                HttpRequest request = HttpRequest.parse(bufferedReader);
+                String path = request.getPath();
+                var map = request.getHeaders();
+                String operation = request.getMethod();
                     String contentTypeText = "text/plain";
                     String contentEncoding = (map.containsKey("Accept-Encoding") && map.get("Accept-Encoding").contains("gzip")) ? "gzip" : "";
                     String connection = (map.containsKey("Connection") && map.get("Connection").contains("close")) ? "close" : "";
@@ -131,12 +98,9 @@ public class HandleClients implements Runnable {
                         sendResponse(out, "405", "Method Not Allowed", contentTypeText, "", connection, "Bad endpoint".getBytes());
                         System.out.println("Not accepted");
                     }
-                } else {
-                    sendResponse(out, "404", "Not found", "text/plain", "", "close", "No request line received".getBytes());
-                    System.out.println("Not accepted");
                 }
             }
-        } catch (IOException e) {
+         catch (IOException e) {
             System.out.println(e.getMessage());
         }
     }
