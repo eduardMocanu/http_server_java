@@ -1,3 +1,9 @@
+package http;
+
+import exceptions.EmptyRequest;
+import exceptions.InvalidHeader;
+import exceptions.MalformedRequest;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.util.HashMap;
@@ -15,11 +21,12 @@ public class HttpRequest {
         this.path = path;
     }
 
-    static HttpRequest parse(BufferedReader reader) throws IOException {
+    static public HttpRequest parse(BufferedReader reader) throws IOException {
         String requestLine = reader.readLine();
+        System.out.println(requestLine);
         if (requestLine != null && !requestLine.isEmpty()) {
             String[] parts = requestLine.split(" ");
-            if (parts.length < 3){
+            if (parts.length < 3) {
                 throw new MalformedRequest("The request line is malformed");
             }
             String method = parts[0];
@@ -30,7 +37,6 @@ public class HttpRequest {
             throw new EmptyRequest("The request line is empty");
         }
     }
-
 
     private static Map<String, String> parseHeaders(BufferedReader reader) throws IOException {
         Map<String, String> headers = new HashMap<>();
@@ -61,10 +67,10 @@ public class HttpRequest {
         return headers;
     }
 
-    public String getHeader(String header){
-        if (headers.containsKey(header)){
+    public String getHeader(String header) {
+        if (headers.containsKey(header)) {
             return headers.get(header);
-        }else{
+        } else {
             throw new InvalidHeader("The wanted header is not in the request headers");
         }
     }
@@ -72,10 +78,12 @@ public class HttpRequest {
     public String getMethod() {
         return method;
     }
-    public String getPath(){
+
+    public String getPath() {
         return path;
     }
-    public Map<String, String> getHeaders(){
+
+    public Map<String, String> getHeaders() {
         return headers;
     }
 }

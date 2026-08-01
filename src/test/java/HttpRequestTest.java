@@ -1,8 +1,14 @@
+import exceptions.EmptyRequest;
+import exceptions.InvalidHeader;
+import exceptions.MalformedRequest;
+import http.HttpRequest;
 import org.junit.jupiter.api.Test;
 
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.StringReader;
+import java.util.HashMap;
+import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -13,28 +19,42 @@ public class HttpRequestTest {
     }
 
     @Test
-    void parseMethodAndPath() throws IOException{
+    void parseMethodAndPathTest() throws IOException{
         HttpRequest req = parse("GET /go/123 HTTP/1.1\r\n\r\n");
 
-        assertEquals(req.getPath(), req.getPath());
-        assertEquals(req.getMethod(), req.getMethod());
+        assertEquals("/go/123", req.getPath());
+        assertEquals("GET", req.getMethod());
     }
 
     @Test
-    void parseHeaders() throws IOException{
+    void parseHeadersTest() throws IOException{
         HttpRequest req = parse("GET /go/123 HTTP/1.1\r\n" +
                 "User-Agent: curl/8.0\r\n" +
                 "\r\n");
-        assertEquals(req.getHeader("User-Agent"), "curl/8.0");
+
+        assertEquals("curl/8.0", req.getHeader("User-Agent"));
+        assertThrows(InvalidHeader.class, () -> req.getHeader("adadaw"));
+
     }
 
     @Test
-    void malformedRequestLine(){
+    void getHeadersTest() throws IOException{
+        HttpRequest req = parse("GET /go/123 HTTP/1.1\r\n" +
+                "User-Agent: curl/8.0\r\n" +
+                "\r\n");
+        Map<String, String> headers = new HashMap<>();
+        headers.put("User-Agent", "curl/8.0");
+
+        assertEquals(req.getHeaders(), headers);
+    }
+
+    @Test
+    void malformedRequestLineTest(){
         assertThrows(MalformedRequest.class, () -> parse("GET HTTP/1.1\r\n\r\n\r\n"));
     }
 
     @Test
-    void emptyRequestLine(){
+    void emptyRequestLineTest(){
         assertThrows(EmptyRequest.class, () -> parse(""));
     }
 }

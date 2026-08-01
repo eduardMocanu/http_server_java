@@ -20,7 +20,7 @@ Session 2 - Set up JUnit properly
 Session 3-4 - First extraction: request parsing
   - Pull the request-line + header-parsing loop out of HandleClients.java
     (currently lines ~25-63) into a standalone class, e.g.
-    HttpRequest.parse(BufferedReader reader), returning a small immutable
+    http.HttpRequest.parse(BufferedReader reader), returning a small immutable
     object (method, path, headers map).
   - No sockets in this class - take a BufferedReader/Reader so tests can
     feed it a StringReader instead of a real connection.
