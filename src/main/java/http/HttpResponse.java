@@ -63,10 +63,46 @@ public class HttpResponse {
         return new HttpResponse(200, body.getBytes(), headers);
     }
 
+    public static HttpResponse ok(byte[] body) {
+        Map<String, String> headers = new HashMap<>();
+        headers.put("Content-Type", "application/octet-stream");
+        return new HttpResponse(200, body, headers);
+    }
+
     public static HttpResponse ok(String body, Map<String, String> extraHeaders) {
         Map<String, String> headers = new HashMap<>(extraHeaders);
         headers.putIfAbsent("Content-Type", "text/plain");
         return new HttpResponse(200, body.getBytes(), headers);
+    }
+
+    public static HttpResponse unauthorized(String body){
+        Map<String, String> headers = new HashMap<>();
+        headers.put("Content-Type", "text/plain");
+        return new HttpResponse(401, body.getBytes(), headers);
+    }
+
+    public static HttpResponse internalServerError(String body){
+        Map<String, String> headers = new HashMap<>();
+        headers.put("Content-Type", "text/plain");
+        return new HttpResponse(500, body.getBytes(), headers);
+    }
+
+    public static HttpResponse lengthRequired(String body){
+        Map<String, String> headers = new HashMap<>();
+        headers.put("Content-Type", "text/plain");
+        return new HttpResponse(411, body.getBytes(), headers);
+    }
+
+    public static HttpResponse created(String body){
+        Map<String, String> headers = new HashMap<>();
+        headers.put("Content-Type", "text/plain");
+        return new HttpResponse(201, body.getBytes(), headers);
+    }
+
+    public static HttpResponse badRequest(String body){
+        Map<String, String> headers = new HashMap<>();
+        headers.put("Content-Type", "text/plain");
+        return new HttpResponse(400, body.getBytes(), headers);
     }
 
 }

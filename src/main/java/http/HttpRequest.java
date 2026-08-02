@@ -14,11 +14,13 @@ public class HttpRequest {
     private final Map<String, String> headers;
     private final String method;
     private final String path;
+    private final byte[] body;
 
-    private HttpRequest(Map<String, String> headers, String method, String path) {
+    private HttpRequest(Map<String, String> headers, String method, String path, byte[] body) {
         this.headers = headers;
         this.method = method;
         this.path = path;
+        this.body = body;
     }
 
     static public HttpRequest parse(BufferedReader reader) throws IOException {
@@ -32,7 +34,10 @@ public class HttpRequest {
             String method = parts[0];
             String path = parts[1];
             Map<String, String> headers = parseHeaders(reader);
-            return new HttpRequest(headers, method, path);
+
+            byte[] body = parseBody(reader, Integer.parseInt(headers.getOrDefault("Content-Length", "0")));
+
+            return new HttpRequest(headers, method, path, body);
         } else {
             throw new EmptyRequest("The request line is empty");
         }
@@ -67,6 +72,31 @@ public class HttpRequest {
         return headers;
     }
 
+    private static byte[] parseBody(BufferedReader reader, int contentLength) throws IOException {
+        if (contentLength == 0){
+            return new byte[0];
+        }
+        char[] buff = new char[contentLength];
+        int totalRead = 0;
+        while (totalRead < contentLength){
+            int n = reader.read(buff, totalRead, contentLength - totalRead);
+            if ( n == -1){
+                break;
+            }
+            totalRead += n;
+        }
+
+        if (totalRead < contentLength){
+            throw new MalformedRequest("The content length doesn't match the body size");
+        }
+
+        byte[] body = new byte[totalRead];
+        for (int i =0; i<totalRead; i++){
+            body[i] = (byte) buff[i];
+        }
+        return body;
+    }
+
     public String getHeader(String header) {
         if (headers.containsKey(header)) {
             return headers.get(header);
@@ -85,5 +115,9 @@ public class HttpRequest {
 
     public Map<String, String> getHeaders() {
         return headers;
+    }
+
+    public byte[] getBody() {
+        return body;
     }
 }
