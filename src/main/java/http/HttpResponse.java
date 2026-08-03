@@ -105,4 +105,11 @@ public class HttpResponse {
         return new HttpResponse(400, body.getBytes(), headers);
     }
 
+    public int getResponseCode(){
+        return responseCode;
+    }
+
+    public byte[] getBody() {
+        return body;
+    }
 }

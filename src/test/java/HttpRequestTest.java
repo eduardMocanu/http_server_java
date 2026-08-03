@@ -3,10 +3,10 @@ import exceptions.InvalidHeader;
 import exceptions.MalformedRequest;
 import http.HttpRequest;
 import org.junit.jupiter.api.Test;
+import utils.Utils;
 
-import java.io.BufferedReader;
+
 import java.io.IOException;
-import java.io.StringReader;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -14,13 +14,11 @@ import static org.junit.jupiter.api.Assertions.*;
 
 public class HttpRequestTest {
 
-    private HttpRequest parse(String rawRequest) throws IOException {
-        return HttpRequest.parse(new BufferedReader(new StringReader(rawRequest)));
-    }
+
 
     @Test
     void parseMethodAndPathTest() throws IOException{
-        HttpRequest req = parse("GET /go/123 HTTP/1.1\r\n\r\n");
+        HttpRequest req = Utils.parseRawRequest("GET /go/123 HTTP/1.1\r\n\r\n");
 
         assertEquals("/go/123", req.getPath());
         assertEquals("GET", req.getMethod());
@@ -28,7 +26,7 @@ public class HttpRequestTest {
 
     @Test
     void parseHeadersTest() throws IOException{
-        HttpRequest req = parse("GET /go/123 HTTP/1.1\r\n" +
+        HttpRequest req = Utils.parseRawRequest("GET /go/123 HTTP/1.1\r\n" +
                 "User-Agent: curl/8.0\r\n" +
                 "\r\n");
 
@@ -39,7 +37,8 @@ public class HttpRequestTest {
 
     @Test
     void getHeadersTest() throws IOException{
-        HttpRequest req = parse("GET /go/123 HTTP/1.1\r\n" +
+        HttpRequest req = Utils.parseRawRequest(
+                "GET /go/123 HTTP/1.1\r\n" +
                 "User-Agent: curl/8.0\r\n" +
                 "\r\n");
         Map<String, String> headers = new HashMap<>();
@@ -50,11 +49,11 @@ public class HttpRequestTest {
 
     @Test
     void malformedRequestLineTest(){
-        assertThrows(MalformedRequest.class, () -> parse("GET HTTP/1.1\r\n\r\n\r\n"));
+        assertThrows(MalformedRequest.class, () -> Utils.parseRawRequest("GET HTTP/1.1\r\n\r\n\r\n"));
     }
 
     @Test
     void emptyRequestLineTest(){
-        assertThrows(EmptyRequest.class, () -> parse(""));
+        assertThrows(EmptyRequest.class, () -> Utils.parseRawRequest(""));
     }
 }

@@ -12,7 +12,8 @@ public abstract class MessageCodes {
             411,"Length Required",
             201,"Created",
             405,"Method Not Allowed",
-            500, "Internal Server Error"
+            500, "Internal Server Error",
+            401, "Unauthorized"
     );
 
     static public String messageForResponseCode(int code){

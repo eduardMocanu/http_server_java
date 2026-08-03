@@ -14,10 +14,20 @@ import java.nio.file.Files;
 
 public class FilesGetHandler implements RequestHandler {
 
+    private final String baseDir;
+
+    public FilesGetHandler(String baseDir) {
+        this.baseDir = baseDir;
+    }
+
+    public FilesGetHandler() {
+        this("../files/");
+    }
+
     @Override
     public HttpResponse handle(HttpRequest request) {
         try {
-            File file = Utils.extractFile(request.getPath());
+            File file = Utils.extractFile(request.getPath(), baseDir);
             byte[] fileBody = Files.readAllBytes(file.toPath());
             return HttpResponse.ok(fileBody);
         }catch (IOException e){

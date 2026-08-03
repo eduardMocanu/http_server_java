@@ -13,6 +13,17 @@ import java.io.FileWriter;
 import java.io.IOException;
 
 public class FilesPostHandler implements RequestHandler{
+
+    private final String baseDir;
+
+    public FilesPostHandler(String baseDir){
+        this.baseDir = baseDir;
+    }
+
+    public  FilesPostHandler (){
+        this.baseDir = "../files";
+    }
+
     @Override
     public HttpResponse handle(HttpRequest request) {
         try {
