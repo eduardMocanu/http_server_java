@@ -69,6 +69,12 @@ public class HttpResponse {
         return new HttpResponse(200, body, headers);
     }
 
+    public static HttpResponse ok(byte[] body, Map<String, String> extraHeaders) {
+        Map<String, String> headers = new HashMap<>(extraHeaders);
+        headers.put("Content-Type", "application/octet-stream");
+        return new HttpResponse(200, body, headers);
+    }
+
     public static HttpResponse ok(String body, Map<String, String> extraHeaders) {
         Map<String, String> headers = new HashMap<>(extraHeaders);
         headers.putIfAbsent("Content-Type", "text/plain");
@@ -104,6 +110,7 @@ public class HttpResponse {
         headers.put("Content-Type", "text/plain");
         return new HttpResponse(400, body.getBytes(), headers);
     }
+
 
     public int getResponseCode(){
         return responseCode;

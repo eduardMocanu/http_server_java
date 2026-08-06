@@ -58,6 +58,21 @@ public class FilesGetHandlerTest {
         assertArrayEquals("Ana are mere".getBytes(), response.getBody());
     }
 
+    @Test
+    public void hasCompressionTest() throws IOException {
+        HttpRequest request = Utils.parseRawRequest("GET /files/dada HTTP/1.1\r\n" +
+                "Accept-Encoding: gzip\r\n\r\n");
+
+        assertTrue(fileGetHandler.hasCompression(request));
+    }
+
+    @Test
+    public void notHasCompressionTest() throws IOException {
+        HttpRequest request = Utils.parseRawRequest("GET /files/dada HTTP/1.1\r\n\r\n\r\n");
+
+        assertFalse(fileGetHandler.hasCompression(request));
+    }
+
     @AfterAll
     static public void destroyFile(){
         File file = new File(filePath);
