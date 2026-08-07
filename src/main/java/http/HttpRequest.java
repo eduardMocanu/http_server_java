@@ -62,6 +62,9 @@ public class HttpRequest {
             if (requestLine.startsWith("Content-Length:")) {
                 headers.put("Content-Length", requestLine.substring("Content-Length:".length()).trim());
             }
+            if (requestLine.startsWith("Content-Encoding:")) {
+                headers.put("Content-Encoding", requestLine.substring("Content-Encoding:".length()).trim());
+            }
             if (requestLine.startsWith("Accept-Encoding:")) {
                 headers.put("Accept-Encoding", requestLine.substring("Accept-Encoding:".length()).trim());
             }

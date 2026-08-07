@@ -56,4 +56,29 @@ public class HttpRequestTest {
     void emptyRequestLineTest(){
         assertThrows(EmptyRequest.class, () -> Utils.parseRawRequest(""));
     }
+
+    @Test
+    void parseBodyTest() throws IOException{
+        String body = "Ana are mere";
+        HttpRequest req = Utils.parseRawRequest(Utils.buildPostRequest("/files/test", body));
+
+        assertArrayEquals(body.getBytes(), req.getBody());
+    }
+
+    @Test
+    void parseBodyEmptyTest() throws IOException{
+        HttpRequest req = Utils.parseRawRequest("POST /files/test HTTP/1.1\r\n\r\n");
+
+        assertArrayEquals(new byte[0], req.getBody());
+    }
+
+    @Test
+    void parseBodyLengthMismatchTest(){
+        String rawRequest = "POST /files/test HTTP/1.1\r\n" +
+                "Content-Length: 100\r\n" +
+                "\r\n" +
+                "Ana are mere";
+
+        assertThrows(MalformedRequest.class, () -> Utils.parseRawRequest(rawRequest));
+    }
 }

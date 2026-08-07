@@ -1,5 +1,7 @@
+import compressions.GzipCompressor;
 import handlers.FilesGetHandler;
 import http.HttpRequest;
+import http.HttpResponse;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -71,6 +73,18 @@ public class FilesGetHandlerTest {
         HttpRequest request = Utils.parseRawRequest("GET /files/dada HTTP/1.1\r\n\r\n\r\n");
 
         assertFalse(fileGetHandler.hasCompression(request));
+    }
+
+    @Test
+    public void validFileNameGzipCompressedTest() throws IOException {
+        HttpRequest request = Utils.parseRawRequest("GET /files/filesGetHandlerTestFile HTTP/1.1\r\n" +
+                "Accept-Encoding: gzip\r\n\r\n");
+
+        HttpResponse response = fileGetHandler.handle(request);
+
+        assertEquals(200, response.getResponseCode());
+        assertTrue(response.headersToString().contains("Content-Encoding: gzip"));
+        assertArrayEquals("Ana are mere".getBytes(), GzipCompressor.decompress(response.getBody()));
     }
 
     @AfterAll
